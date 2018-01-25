@@ -3,4 +3,5 @@
     <string name="edit_message">Enter a message</string>
     <string name="button_send">Send</string>
     <string name="button_advertise">Advertise</string>
+    <string name="ble_identifier">EB342F1999A4415597CDD3BFBF9E574B</string>
 </resources>
