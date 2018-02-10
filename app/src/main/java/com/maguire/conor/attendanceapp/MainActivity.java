@@ -41,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
 
         BluetoothLeAdvertiser advertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
 
+//        BluetoothAdapter.getDefaultAdapter().setName("Mag");
+
         AdvertiseSettings settings = new AdvertiseSettings.Builder()
                 .setAdvertiseMode( AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY )
                 .setTxPowerLevel( AdvertiseSettings.ADVERTISE_TX_POWER_HIGH )
@@ -50,9 +52,15 @@ public class MainActivity extends AppCompatActivity {
         ParcelUuid pUuid = new ParcelUuid(UUID.fromString("EB342F19-99A4-4155-97CD-D3BFBF9E574B"));
 
         AdvertiseData data = new AdvertiseData.Builder()
-                .setIncludeDeviceName( false )
+                .setIncludeDeviceName( true )
                 .addServiceData( pUuid, "Data".getBytes( Charset.forName( "UTF-8" ) ) )
                 .build();
+
+//        AdvertiseData data = new AdvertiseData.Builder()
+//                .setIncludeDeviceName( true )
+//                .addServiceUuid( pUuid )
+//                .addServiceData( pUuid, "Data".getBytes( Charset.forName( "UTF-8" ) ) )
+//                .build();
 
         AdvertiseCallback advertisingCallback = new AdvertiseCallback() {
             @Override
