@@ -12,6 +12,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import java.nio.charset.Charset;
 import java.util.UUID;
@@ -21,11 +22,14 @@ public class MainActivity extends AppCompatActivity {
     // This is an extra: Key-Value data that can be transferred from one intent to another
     public static final String EXTRA_MESSAGE = "com.maguire.conor.attendanceapp.MESSAGE";
 
+    public TextView advertisingStatus;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        advertisingStatus = (TextView) findViewById(R.id.advertising_status);
     }
 
     public void sendMessage(View view) {
@@ -34,6 +38,29 @@ public class MainActivity extends AppCompatActivity {
         String message = editText.getText().toString();
         intent.putExtra(EXTRA_MESSAGE, message);
         startActivity(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (AdvertiserService.running) {
+            advertisingStatus.setText("Currently Advertising");
+        } else {
+            advertisingStatus.setText("Not Currently Advertising");
+        }
+    }
+
+    public void startAdvertising(View view) {
+        Intent serviceIntent = new Intent(this, AdvertiserService.class);
+        startService(serviceIntent);
+        advertisingStatus.setText("Currently Advertising");
+    }
+
+    public void stopAdvertising(View view) {
+        Intent serviceIntent = new Intent(this, AdvertiserService.class);
+        stopService(serviceIntent);
+        advertisingStatus.setText("Not Currently Advertising");
     }
 
     public void advertise(View view) {
