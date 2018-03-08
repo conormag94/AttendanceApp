@@ -21,6 +21,7 @@ public class MainActivity extends AppCompatActivity {
 
     // This is an extra: Key-Value data that can be transferred from one intent to another
     public static final String EXTRA_MESSAGE = "com.maguire.conor.attendanceapp.MESSAGE";
+    public static final String STUDENT_NUMBER = "com.maguire.conor.attendanceapp.STUDENT_NUMBER";
 
     public TextView advertisingStatus;
 
@@ -52,8 +53,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void startAdvertising(View view) {
+        EditText editText = (EditText) findViewById(R.id.editText);
+        String studentNumber = editText.getText().toString();
+
         Intent serviceIntent = new Intent(this, AdvertiserService.class);
+        serviceIntent.putExtra(STUDENT_NUMBER, studentNumber);
         startService(serviceIntent);
+
         advertisingStatus.setText("Currently Advertising");
     }
 

@@ -24,11 +24,26 @@ public class AdvertiserService extends Service {
 
     private MyAdvertiseCallback advertiserCallback;
 
+    private String studentNumber;
+
     @Override
     public void onCreate() {
         running = true;
-        advertise();
+        Log.i("BLE_ADVERTISE", "Creating AdvertiserService");
         super.onCreate();
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        String intentExtra = intent.getStringExtra(MainActivity.STUDENT_NUMBER);
+        if (intentExtra != null)
+            studentNumber = intentExtra;
+        else
+            studentNumber = "Data";
+
+        Log.i("BLE_NUMBER", "Student Number: " + studentNumber);
+        advertise();
+        return START_NOT_STICKY;
     }
 
     @Override
@@ -47,9 +62,7 @@ public class AdvertiserService extends Service {
     private void advertise() {
         goForeground();
 
-
         advertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
-
 //        BluetoothAdapter.getDefaultAdapter().setName("Mag");
 
         AdvertiseSettings settings = new AdvertiseSettings.Builder()
@@ -60,9 +73,12 @@ public class AdvertiserService extends Service {
 
         ParcelUuid pUuid = new ParcelUuid(UUID.fromString("EB342F19-99A4-4155-97CD-D3BFBF9E574B"));
 
+        String advertiseData = studentNumber;
+        Log.i("BLE_NUMBER", "Sending: " + advertiseData);
+
         AdvertiseData data = new AdvertiseData.Builder()
                 .setIncludeDeviceName( true )
-                .addServiceData( pUuid, "Data".getBytes( Charset.forName( "UTF-8" ) ) )
+                .addServiceData( pUuid, advertiseData.getBytes( Charset.forName( "UTF-8" ) ) )
                 .build();
 
 //        AdvertiseData data = new AdvertiseData.Builder()
@@ -70,7 +86,6 @@ public class AdvertiserService extends Service {
 //                .addServiceUuid( pUuid )
 //                .addServiceData( pUuid, "Data".getBytes( Charset.forName( "UTF-8" ) ) )
 //                .build();
-
 
         advertiserCallback = new MyAdvertiseCallback();
         advertiser.startAdvertising( settings, data, advertiserCallback );
