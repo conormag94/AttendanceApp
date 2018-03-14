@@ -63,12 +63,11 @@ public class AdvertiserService extends Service {
         goForeground();
 
         advertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
-//        BluetoothAdapter.getDefaultAdapter().setName("Mag");
 
         AdvertiseSettings settings = new AdvertiseSettings.Builder()
                 .setAdvertiseMode( AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY )
                 .setTxPowerLevel( AdvertiseSettings.ADVERTISE_TX_POWER_HIGH )
-                .setConnectable( false )
+                .setConnectable( true )
                 .build();
 
         ParcelUuid pUuid = new ParcelUuid(UUID.fromString("EB342F19-99A4-4155-97CD-D3BFBF9E574B"));
@@ -80,12 +79,6 @@ public class AdvertiserService extends Service {
                 .setIncludeDeviceName( true )
                 .addServiceData( pUuid, advertiseData.getBytes( Charset.forName( "UTF-8" ) ) )
                 .build();
-
-//        AdvertiseData data = new AdvertiseData.Builder()
-//                .setIncludeDeviceName( true )
-//                .addServiceUuid( pUuid )
-//                .addServiceData( pUuid, "Data".getBytes( Charset.forName( "UTF-8" ) ) )
-//                .build();
 
         advertiserCallback = new MyAdvertiseCallback();
         advertiser.startAdvertising( settings, data, advertiserCallback );
@@ -100,7 +93,7 @@ public class AdvertiserService extends Service {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
         Notification n = new Notification.Builder(this)
                 .setContentTitle("Signing you in")
-                .setContentTitle("Recording your attendance via Bluetooth")
+                .setContentText("Recording your attendance via Bluetooth")
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentIntent(pendingIntent)
                 .build();
