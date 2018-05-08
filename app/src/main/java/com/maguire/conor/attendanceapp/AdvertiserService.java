@@ -16,7 +16,9 @@ import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.content.Intent;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.ParcelUuid;
 import android.util.Log;
 
@@ -35,6 +37,8 @@ public class AdvertiserService extends Service {
     private MyAdvertiseCallback advertiserCallback;
 
     private String studentNumber;
+    private int numberOfReads;
+
 
     @Override
     public void onCreate() {
@@ -53,6 +57,8 @@ public class AdvertiserService extends Service {
             studentNumber = "Data";
 
         Log.i("BLE_NUMBER", "Student Number: " + studentNumber);
+
+        numberOfReads = 0;
         advertise();
         startGATTServer();
         return START_NOT_STICKY;
@@ -63,6 +69,7 @@ public class AdvertiserService extends Service {
         running = false;
         stopAdvertising();
         stopGATTServer();
+
         stopForeground(true);
         super.onDestroy();
     }
@@ -152,11 +159,23 @@ public class AdvertiserService extends Service {
                                                 BluetoothGattCharacteristic characteristic) {
             if (characteristic.getUuid().equals(StudentAttendanceProfile.STUDENT_NUMBER)) {
                 Log.d(LOG_TAG, "Read request for " + characteristic.toString() + " from " + device.toString());
-                gattServer.sendResponse(device,
+                boolean success = gattServer.sendResponse(device,
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
                         0,
                         studentNumber.getBytes());
+
+                // Student number has been successfully read by the scanner
+                if (success && numberOfReads < 2) {
+                    numberOfReads++;
+
+                    if (numberOfReads == 1)
+                        sleepService();
+                    else if (numberOfReads == 2)
+                        stopSelf();
+                }
+
+
             } else {
                 Log.d(LOG_TAG, "Invalid characteristic");
                 gattServer.sendResponse(device,
@@ -172,6 +191,22 @@ public class AdvertiserService extends Service {
             super.onDescriptorReadRequest(device, requestId, offset, descriptor);
         }
     };
+
+    // Stops the advertising and gatt server for a period of time before restarting
+    private void sleepService() {
+        final Handler handler = new Handler(Looper.getMainLooper());
+        Log.d(LOG_TAG, "Sleeping the Service******");
+        stopAdvertising();
+        stopGATTServer();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(LOG_TAG, "*******Restarting the Service");
+                advertise();
+                startGATTServer();
+            }
+        }, 5000);
+    }
 
     private void goForeground() {
         Intent notificationIntent = new Intent(this, MainActivity.class);

@@ -1,5 +1,6 @@
 package com.maguire.conor.attendanceapp;
 
+import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -21,6 +22,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         advertisingStatus = (TextView) findViewById(R.id.advertising_status);
+
+        BluetoothAdapter.getDefaultAdapter().enable();
     }
 
     public void sendMessage(View view) {
