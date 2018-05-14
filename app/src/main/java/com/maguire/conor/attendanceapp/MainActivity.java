@@ -1,12 +1,25 @@
 package com.maguire.conor.attendanceapp;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,6 +37,15 @@ public class MainActivity extends AppCompatActivity {
         advertisingStatus = (TextView) findViewById(R.id.advertising_status);
 
         BluetoothAdapter.getDefaultAdapter().enable();
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                broadcastReceiver, new IntentFilter("service-event"));
+    }
+
+    @Override
+    protected void onPause() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+        super.onPause();
     }
 
     public void sendMessage(View view) {
@@ -36,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onResume() {
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                broadcastReceiver, new IntentFilter("service-event"));
         super.onResume();
 
         if (AdvertiserService.running) {
@@ -43,6 +67,14 @@ public class MainActivity extends AppCompatActivity {
         } else {
             advertisingStatus.setText("Not Currently Advertising");
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        Intent serviceIntent = new Intent(this, AdvertiserService.class);
+        stopService(serviceIntent);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+        super.onDestroy();
     }
 
     public void startAdvertising(View view) {
@@ -61,5 +93,58 @@ public class MainActivity extends AppCompatActivity {
         stopService(serviceIntent);
         advertisingStatus.setText("Not Currently Advertising");
     }
+
+    public void displayFinishedNotification() {
+        Toast.makeText(this, "This is my Toast message!", Toast.LENGTH_LONG).show();
+
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,
+                PendingIntent.FLAG_ONE_SHOT);
+
+        String channelId = "default_channel_id";
+        String channelDescription = "Default Channel";
+        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        NotificationCompat.Builder notificationBuilder =
+                new NotificationCompat.Builder(this, channelId)
+                        .setSmallIcon(R.drawable.ic_launcher_foreground)
+                        .setContentTitle("Sign-in finished")
+                        .setContentText("Attendance sign-in has completed successfully!")
+                        .setAutoCancel(true)
+                        .setSound(defaultSoundUri)
+                        .setContentIntent(pendingIntent);
+
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        // Since android Oreo notification channel is needed.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(channelId,
+                    "Channel human readable title",
+                    NotificationManager.IMPORTANCE_DEFAULT);
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+    }
+
+    private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String message = intent.getStringExtra("serviceMessage");
+            Log.d("BroadcastReceiver", message);
+
+            if (message.equals(AdvertiserService.ADVERTISING_ON)) {
+                advertisingStatus.setText("Currently Advertising");
+            }
+            else if (message.equals(AdvertiserService.ADVERTISING_OFF)) {
+                advertisingStatus.setText("Not Currently Advertising");
+            }
+            else if (message.equals(AdvertiserService.FINISHED)) {
+                advertisingStatus.setText("Not Currently Advertising");
+                displayFinishedNotification();
+            }
+        }
+    };
 
 }

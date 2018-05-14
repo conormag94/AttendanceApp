@@ -20,6 +20,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.ParcelUuid;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import java.util.UUID;
@@ -27,6 +28,10 @@ import java.util.UUID;
 public class AdvertiserService extends Service {
 
     private static final String LOG_TAG = AdvertiserService.class.getSimpleName();
+
+    public static final String ADVERTISING_OFF = "ADVERTISING_OFF";
+    public static final String ADVERTISING_ON = "ADVERTISING_ON";
+    public static final String FINISHED = "FINISHED";
 
     public static boolean running = false;
 
@@ -108,10 +113,12 @@ public class AdvertiserService extends Service {
         Log.i(LOG_TAG, data.toString());
         advertiserCallback = new MyAdvertiseCallback();
         advertiser.startAdvertising( settings, data, advertiserCallback );
+        broadcastMessage(ADVERTISING_ON);
     }
 
     private void stopAdvertising() {
         advertiser.stopAdvertising(advertiserCallback);
+        broadcastMessage(ADVERTISING_OFF);
     }
 
     private class MyAdvertiseCallback  extends AdvertiseCallback {
@@ -171,8 +178,10 @@ public class AdvertiserService extends Service {
 
                     if (numberOfReads == 1)
                         sleepService();
-                    else if (numberOfReads == 2)
+                    else if (numberOfReads == 2) {
+                        broadcastMessage(FINISHED);
                         stopSelf();
+                    }
                 }
 
 
@@ -218,6 +227,14 @@ public class AdvertiserService extends Service {
                 .setContentIntent(pendingIntent)
                 .build();
         startForeground(1, n);
+    }
+
+    // Sends a message back to the main activity
+    private void broadcastMessage(String message) {
+        Log.d("BroadcastSent", message);
+        Intent intent = new Intent("service-event");
+        intent.putExtra("serviceMessage", message);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
 }
